@@ -1,0 +1,9 @@
+#Overall gitignore file for PUMA
+
+#Ignore vim swap files
+*~
+*.swp
+*.swo
+
+*.pyc
+
