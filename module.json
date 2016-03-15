@@ -1,0 +1,15 @@
+{
+  "name": "settings",
+  "version": "1.0.0",
+  "dependencies": {
+    "puma-base": ">=1.0.0"
+  },
+  "icon": "icons:settings",
+  "displayName": "Settings",
+  "appDir": "app",
+  "contentImport": "/elements/settings-elements.html",
+  "contentElement": "settings-dashboard",
+  "allowedGroups": ["puma"],
+  "isCore": false,
+  "isSetting": true
+}

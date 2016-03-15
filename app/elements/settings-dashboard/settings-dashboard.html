@@ -1,0 +1,298 @@
+<dom-module id="settings-dashboard">
+  <style>
+    :host {
+      display: block;
+    }
+
+    :host > paper-toolbar {
+      z-index: 1;
+      @apply(--shadow-elevation-4dp);
+    }
+
+    paper-toolbar .title {
+      line-height: normal;
+    }
+
+    #main {
+      height: calc(100% - var(--puma-paper-toolbar-height));
+      top: var(--puma-paper-toolbar-height);
+    }
+
+    .setting {
+      margin: 8px;
+      padding: 8px 16px;
+      height: 24px;
+      border-radius: 4px;
+      background-color: #fff;
+      width: 100%
+    }
+
+    .timestamp {
+      font-size: 12px;
+      color: #616161;
+    }
+
+    .good {
+      color: #558B2F;
+    }
+
+    .warn {
+      color: #EF6C00;
+    }
+
+    .error {
+      color: #C62828;
+    }
+
+    .help {
+      width: 320px;
+    }
+
+    @media (min-width: 640px) {
+      .setting {
+        width: 500px;
+      }
+    }
+
+    @media (max-width: 639px) {
+      #main {
+        height: calc(100% - var(--puma-paper-toolbar-height-small));
+        top: var(--puma-paper-toolbar-height-small);
+      }
+    }
+  </style>
+  <template>
+
+    <paper-toolbar class="fit" elevation="1">
+      <paper-icon-button icon="icons:arrow-back" on-tap="_goBack"></paper-icon-button>
+      <div class="title">Settings</div>
+    </paper-toolbar>
+
+    <div id="main" class="content layout vertical center fit">
+
+      <div class="setting layout horizontal center">
+        <div class="title">Incognito Mode</div>
+        <span class="flex"></span>
+        <paper-toggle-button id="incognito-mode" on-change="onIncognitoModeChanged"></paper-toggle-button>
+        <paper-icon-button id="incognito-mode-help" icon="help" on-tap="onHelp"></paper-icon-button>
+      </div>
+      <div class="setting layout horizontal center">
+        <div class="title">Selfish Mode</div>
+        <span class="flex"></span>
+        <paper-toggle-button id="selfish-mode" on-change="onSelfishModeChanged"></paper-toggle-button>
+        <paper-icon-button id="selfish-mode-help" icon="help" on-tap="onHelp"></paper-icon-button>
+      </div>
+      <div class="setting layout horizontal center">
+        <div class="title">System Time</div>
+        <span class="flex"></span>
+        <div class="timestamp">[[systemDate]]</div>
+        <paper-icon-button id="system-time" icon="cached" on-tap="onSystemTimeSync"></paper-icon-button>
+        <paper-icon-button id="system-time-help" icon="help" on-tap="onHelp"></paper-icon-button>
+      </div>
+      <div class="setting layout horizontal center">
+        <div class="title">Disable Login</div>
+        <span class="flex"></span>
+        <paper-toggle-button id="disable-login" on-change="onDisableLoginChanged"></paper-toggle-button>
+        <paper-icon-button id="disable-login-help" icon="help" on-tap="onHelp"></paper-icon-button>
+      </div>
+
+    </div>
+
+    <paper-dialog id="help-dialog" modal>
+      <h2>Help</h2>
+      <div class="help">[[help]]</div>
+      <div class="buttons">
+        <paper-button dialog-confirm>OK</paper-button>
+      </div>
+    </paper-dialog>
+
+    <base-api id="base-api" settings="{{settings}}" system-time="{{systemTime}}"></base-api>
+  </template>
+</dom-module>
+
+<script>
+  (function() {
+    'use strict';
+
+    var DBG = false;
+
+    var CALCULATE_SYSTEM_DATE_INTERVAL_MS = 500;
+
+    Polymer({
+      is: 'settings-dashboard',
+
+      observers: [
+        '_settingsChanged(settings)',
+        '_systemTimeChanged(systemTime)'
+      ],
+
+      _settingsChanged: function(settings) {
+        if (!settings) {
+          return;
+        }
+        if (settings.incognito_mode) {
+          this.$['incognito-mode'].checked = settings.incognito_mode;
+        }
+        if (settings.selfish_mode) {
+          this.$['selfish-mode'].checked = settings.selfish_mode;
+        }
+        if (settings.disableLogin) {
+          this.$['disable-login'].checked = settings.disableLogin;
+        }
+      },
+
+      _systemTimeChanged: function(systemTime) {
+        if (DBG) console.log(Date.now(), '_systemTimeChanged', systemTime);
+        this._systemTimeSync = Date.now();
+      },
+
+      ready: function() {
+        this.help = '';
+        this._helpMap = {
+          'incognito-mode': {
+            help: 'Incognito mode causes the local modem manager to not respond to remote MAT Daemon scans for modem managers.'
+          },
+          'selfish-mode': {
+            help: 'Selfish mode blocks remote MAT Daemons from connecting to the local modem manager.'
+          },
+          'system-time': {
+            help: 'System Time is the system time of the server. The sync button will try to sync the server\'s system time to the client\'s system time.'
+          },
+          'disable-login': {
+            help: 'Disable Login automatically performs a login when a client loads. This setting is generally used to facilitate module development.'
+          }
+        };
+      },
+
+      onIncognitoModeChanged: function(e, detail) {
+        var sender = e.target;
+
+        var update = {
+          incognito_mode: sender.checked
+        };
+
+        sender.disabled = true;
+        this.$['base-api'].updateSettingsList(update)
+        .then(null, function() {
+          sender.checked = !sender.checked;
+        })
+        .then(function() {
+          sender.disabled = false;
+        });
+      },
+
+      onSelfishModeChanged: function(e, detail) {
+        var sender = e.target;
+
+        var update = {
+          selfish_mode: sender.checked
+        };
+
+        sender.disabled = true;
+        this.$['base-api'].updateSettingsList(update)
+        .then(null, function() {
+          sender.checked = !sender.checked;
+        })
+        .then(function() {
+          sender.disabled = false;
+        });
+      },
+
+      onSystemTimeSync: function(e, detail) {
+        if (DBG) console.log(Date.now(), 'onSystemTimeSync');
+        var self = this;
+
+        // HACK Start
+        var sender = e.srcElement.parentElement;
+        // HACK End
+
+        sender.disabled = true;
+        self.$['base-api'].setSystemTime(Date.now())
+        .then(null, function(err) {
+          console.warn(err);
+        })
+        .then(function() {
+          sender.disabled = false;
+        });
+      },
+
+      _calculateSystemDate: function() {
+        if (DBG) console.log(Date.now(), '_calculateSystemDate');
+
+        var now = Date.now();
+        var elapsedTime = now - this._systemTimeSync;
+        var estimatedSystemTime = this.systemTime + elapsedTime;
+
+        var diff = Math.abs(Date.now() - estimatedSystemTime);
+        if (1000 > diff) {
+          Polymer.dom(this.$['system-time']).classList.toggle('good', true);
+          Polymer.dom(this.$['system-time']).classList.toggle('warn', false);
+          Polymer.dom(this.$['system-time']).classList.toggle('error', false);
+        } else if (60 * 1000 > diff) {
+          Polymer.dom(this.$['system-time']).classList.toggle('good', false);
+          Polymer.dom(this.$['system-time']).classList.toggle('warn', true);
+          Polymer.dom(this.$['system-time']).classList.toggle('error', false);
+        } else {
+          Polymer.dom(this.$['system-time']).classList.toggle('good', false);
+          Polymer.dom(this.$['system-time']).classList.toggle('warn', false);
+          Polymer.dom(this.$['system-time']).classList.toggle('error', true);
+        }
+
+        var systemDate = new Date(estimatedSystemTime);
+        this.systemDate = systemDate.toUTCString();
+      },
+
+      onDisableLoginChanged: function(e, detail) {
+        var sender = e.target;
+
+        var update = {
+          disableLogin: sender.checked
+        };
+
+        sender.disabled = true;
+        this.$['base-api'].updateSettingsList(update)
+        .then(null, function() {
+          sender.checked = !sender.checked;
+        })
+        .then(function() {
+          sender.disabled = false;
+        });
+      },
+
+      attached: function() {
+        if (DBG) console.log(Date.now(), 'attached');
+
+        var self = this;
+        self._calculateSystemDateInterval = setInterval(function() {
+          self._calculateSystemDate();
+        }, CALCULATE_SYSTEM_DATE_INTERVAL_MS);
+      },
+
+      detached: function() {
+        if (DBG) console.log(Date.now(), 'detached');
+
+        if (this._calculateSystemDateInterval) {
+          clearInterval(this._calculateSystemDateInterval);
+        }
+      },
+
+      onHelp: function(e, detail) {
+        // HACK Start
+        var sender = e.srcElement.parentElement;
+        // HACK End
+        var re = /-help$/;
+        var id = sender.id.replace(re, '');
+        this.help = this._helpMap[id].help;
+        this.$['help-dialog'].open();
+      },
+
+      _goBack: function(e, detail) {
+        var self = this;
+        setTimeout(function(){
+          self.fire('back');
+        },500);
+      },
+    });
+
+  }());
+</script>
