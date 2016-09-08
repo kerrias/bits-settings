@@ -1,7 +1,9 @@
+<link rel="import" href="../../bower_components/paper-styles/typography.html">
+
 <dom-module id="settings-dashboard">
   <style>
     :host {
-      display: block;
+      @apply(--layout-fit);
     }
 
     :host > paper-toolbar {
@@ -14,20 +16,36 @@
     }
 
     #main {
-      height: calc(100% - var(--puma-paper-toolbar-height));
-      top: var(--puma-paper-toolbar-height);
+      margin: 0px auto;
+      width: 100%;
+      max-width: 960px;
+      box-sizing: border-box;
+      padding: 48px 24px 0px 24px;
     }
 
     .setting {
-      margin: 8px;
-      padding: 8px 16px;
-      height: 24px;
-      border-radius: 4px;
+      @apply(--layout-horizontal);
+      @apply(--layout-center);
+      @apply(--layout-justified);
+      margin: 8px 0px 8px 0px;
+      min-height: 70px;
+      border-radius: 2px;
       background-color: #fff;
-      width: 100%
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 16px 0px 16px;
+    }
+
+    .meow {
+    }
+
+    .setting-title {
+      @apply(--paper-font-subhead);
+      width: auto;
     }
 
     .timestamp {
+      @apply(--layout-self-center);
       font-size: 12px;
       color: #616161;
     }
@@ -45,55 +63,71 @@
     }
 
     .help {
-      width: 320px;
+      @apply(--layout-self-center);
     }
 
-    @media (min-width: 640px) {
-      .setting {
-        width: 500px;
-      }
+    .setting-controls{
+      @apply(--layout-horizontal);
+      @apply(--layout-end-justified);
     }
 
-    @media (max-width: 639px) {
+    @media (max-width: 800px) {
       #main {
-        height: calc(100% - var(--puma-paper-toolbar-height-small));
-        top: var(--puma-paper-toolbar-height-small);
+        padding: 8px 0px 8px 0px;
       }
     }
+
   </style>
+
+
   <template>
 
-    <paper-toolbar class="fit" elevation="1">
+    <paper-toolbar  elevation="1">
       <paper-icon-button icon="icons:arrow-back" on-tap="_goBack"></paper-icon-button>
       <div class="title">Settings</div>
     </paper-toolbar>
 
-    <div id="main" class="content layout vertical center fit">
+    <div id="main">
 
-      <div class="setting layout horizontal center">
-        <div class="title">Incognito Mode</div>
-        <span class="flex"></span>
-        <paper-toggle-button id="incognito-mode" on-change="onIncognitoModeChanged"></paper-toggle-button>
-        <paper-icon-button id="incognito-mode-help" icon="help" on-tap="onHelp"></paper-icon-button>
+      <div class="setting">
+        <div class="setting-title">Incognito Mode</div>
+        <div class="setting-controls">
+          <paper-toggle-button id="incognito-mode" on-change="onIncognitoModeChanged"></paper-toggle-button>
+          <div class="help">
+            <paper-icon-button id="incognito-mode-help" icon="help" on-tap="onHelp"></paper-icon-button>
+          </div>
+        </div>
       </div>
-      <div class="setting layout horizontal center">
-        <div class="title">Selfish Mode</div>
-        <span class="flex"></span>
-        <paper-toggle-button id="selfish-mode" on-change="onSelfishModeChanged"></paper-toggle-button>
-        <paper-icon-button id="selfish-mode-help" icon="help" on-tap="onHelp"></paper-icon-button>
+
+      <div class="setting">
+        <div class="setting-title">Selfish Mode</div>
+        <div class="setting-controls">
+          <paper-toggle-button id="selfish-mode" on-change="onSelfishModeChanged"></paper-toggle-button>
+          <div class="help">
+            <paper-icon-button id="selfish-mode-help" icon="help" on-tap="onHelp"></paper-icon-button>
+          </div>
+        </div>
       </div>
-      <div class="setting layout horizontal center">
-        <div class="title">System Time</div>
-        <span class="flex"></span>
+
+      <div class="setting meow">
+        <div class="setting-title no-flex">Time</div>
         <div class="timestamp">[[systemDate]]</div>
-        <paper-icon-button id="system-time" icon="cached" on-tap="onSystemTimeSync"></paper-icon-button>
-        <paper-icon-button id="system-time-help" icon="help" on-tap="onHelp"></paper-icon-button>
+        <div class="setting-controls">
+          <div class="help">
+            <paper-icon-button id="system-time" icon="cached" on-tap="onSystemTimeSync"></paper-icon-button>
+            <paper-icon-button id="system-time-help" icon="help" on-tap="onHelp"></paper-icon-button>
+          </div>
+        </div>
       </div>
-      <div class="setting layout horizontal center">
-        <div class="title">Disable Login</div>
-        <span class="flex"></span>
-        <paper-toggle-button id="disable-login" on-change="onDisableLoginChanged"></paper-toggle-button>
-        <paper-icon-button id="disable-login-help" icon="help" on-tap="onHelp"></paper-icon-button>
+
+      <div class="setting">
+        <div class="setting-title">Disable Login</div>
+        <div class="setting-controls">
+          <paper-toggle-button id="disable-login" on-change="onDisableLoginChanged"></paper-toggle-button>
+          <div class="help">
+            <paper-icon-button id="disable-login-help" icon="help" on-tap="onHelp"></paper-icon-button>
+          </div>
+        </div>
       </div>
 
     </div>
