@@ -1,0 +1,148 @@
+<!--
+Copyright 2017 LGS Innovations
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<!-- bplint-disable no-unused-import -->
+<link rel="import" href="../../bower_components/app-storage/app-storage-behavior.html">
+<link rel="import" href="../base-message-center/base-message-center-behavior.html">
+<!-- bplint-disable no-unused-import -->
+
+<script>
+  ((global) => {
+    'use strict';
+
+    global.Bits = global.Bits || {};
+
+    /**
+     * @polymerBehavior
+     */
+    global.Bits.SettingsDocumentBehaviorImpl = {
+      created: function() {
+        this._boundOnSet = this._onSet.bind(this);
+      },
+
+      _onSet: function(key, value) {
+        if (key === this.key) {
+          this.syncToMemory(() => {
+            this.data = value;
+          });
+        }
+      },
+
+      properties: {
+        tag: {
+          type: String,
+          observer: '_tagChanged',
+          value: null
+        },
+
+        key: {
+          type: 'String',
+          observer: '_keyChanged'
+        }
+      },
+
+      _tagChanged: function(tag, oldTag) {
+        if (oldTag) {
+          this.removeSocketEventListener(`${oldTag} set`, this._boundOnSet);
+        }
+        if (tag) {
+          this.addSocketEventListener(`${tag} set`, this._boundOnSet);
+        }
+      },
+
+      _keyChanged: function() {
+        return this._initializeStoredValue();
+      },
+
+      /**
+       * Stores a value at the given key, and if successful, updates this.key.
+       *
+       * @override
+       * @param {string} key The new key to use.
+       */
+      save: function(key) {
+        return this.sendRequest(`${this.tag} set`, {key: key, value: this.data})
+        .then(() => {
+          this.key = key;
+        });
+      },
+
+      /**
+       * @override
+       */
+      get zeroValue() {
+        return null;
+      },
+
+      /**
+       * @override
+       */
+      get isNew() {
+        return !this.key;
+      },
+
+      /**
+       * @override
+       */
+      reset: function() {
+        this.key = null;
+        this.data = this.zeroValue;
+      },
+
+      /**
+       * @override
+       */
+      destroy: function() {
+        return this.sendRequest(`${this.tag} set`, {key: this.key, value: null});
+      },
+
+      /**
+       * @override
+       */
+      getStoredValue: function(path) {
+        return this.sendRequest(`${this.tag} get`, {key: this.key, defValue: this.zeroValue});
+      },
+
+      /**
+       * @override
+       */
+      setStoredValue: function(path, value) {
+        if (this.key) {
+          return this.sendRequest(`${this.tag} set`, {key: this.key, path: path, value: value});
+        } else {
+          return Promise.reject(new Error('key must not be null'));
+        }
+      },
+
+      memoryPathToStoragePath: function (path) {
+        return path.replace('data', 'value');
+      },
+
+      storagePathToMemoryPath: function (path) {
+        return this.key;
+      }
+
+    };
+
+     /**
+      * @polymerBehavior
+      */
+    global.Bits.SettingsDocumentBehavior = [
+      global.Polymer.AppStorageBehavior,
+      global.Bits.BaseMessageCenterBehavior,
+      global.Bits.SettingsDocumentBehaviorImpl
+    ];
+  })(this);
+</script>

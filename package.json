@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "scripts": {
+    "bits:install": "yarn --prod",
+    "polymerLint": "polymer-lint --rules component-name-matches-filename,no-missing-import,no-unused-import,one-component,style-inside-template ./app/elements",
+    "lint": "eslint --fix ./ && npm run polymerLint",
+    "test": "mocha",
+    "build": "yarn && npm run lint && npm run test"
+  },
+  "devDependencies": {
+    "eslint": "^4.5.0",
+    "eslint-config-google": "^0.9.1",
+    "eslint-plugin-html": "^3.2.0",
+    "mocha": "^3.5.0",
+    "polymer-lint": "^0.8.3"
+  }
+}

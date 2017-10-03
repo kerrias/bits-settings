@@ -1,0 +1,69 @@
+# This is an example gitlab ci build script to check the syntax you can use the
+# linter at http://oskarblues.brewmaster.lab/ci/lint
+
+stages:
+    # https://docs.gitlab.com/ee/ci/yaml/README.html#stages
+    - build
+    - test
+    - omg
+
+
+cache:
+    paths:
+        - .build-ids/
+        - .test-branch
+
+
+build-dev:
+    image: newbelgium:5000/docker-bits:2.0
+    stage: build
+    tags:
+        - bits
+        - docker
+    script:
+        - printenv
+        - export PROJECT_BUILD_ID=$(/opt/bits-tools/ci-tools/tools/get-build-id.sh)
+        - /opt/bits-tools/build-tools/package-module.py -m ./ --git-branch "${CI_BUILD_REF_NAME}" -b "${PROJECT_BUILD_ID}" -d
+        - echo -n "dev" > .test-branch
+        - /opt/bits-tools/ci-tools/tools/get-build-id.sh -u
+    artifacts:
+        # https://docs.gitlab.com/ee/ci/yaml/README.html#artifacts
+        when: on_success
+        expire_in: 3 weeks
+        paths:
+            - "*.tgz"
+
+    except:
+        - master
+        - /^[0-9]{6}-(.*-)?release$/
+
+build-release:
+    image: newbelgium:5000/docker-bits:2.0
+    stage: build
+    tags:
+        - bits
+        - docker
+    script:
+        - export PROJECT_BUILD_ID=$(/opt/bits-tools/ci-tools/tools/get-build-id.sh)
+        - /opt/bits-tools/build-tools/package-module.py -m ./ --git-branch "${CI_BUILD_REF_NAME}" -b "${PROJECT_BUILD_ID}"
+        - echo -n "${CI_BUILD_REF_NAME}" > .test-branch
+        - /opt/bits-tools/ci-tools/tools/get-build-id.sh -u
+    artifacts:
+        # https://docs.gitlab.com/ee/ci/yaml/README.html#artifacts
+        when: on_success
+        paths:
+            - "*.tgz"
+
+    only:
+        - master
+        - /^[0-9]{6}-(.*-)?release$/
+
+trigger-omg:
+    stage: omg
+    tags:
+        - bits
+        - shell
+    when: on_success
+    script:
+        - /opt/bits-tools/ci-tools/tools/trigger-omgs.py -m ./ -b "${CI_BUILD_REF_NAME}" -o /opt/bits-build/omg-lists
+

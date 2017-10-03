@@ -1,0 +1,8 @@
+node_packages/*
+support/*
+.gitignore
+test/fixtures/*
+data/*
+gulpfile.js
+yarn.lock
+app/bower_components
