@@ -1,5 +1,4 @@
 # This is an example gitlab ci build script to check the syntax you can use the
-# linter at http://oskarblues.brewmaster.lab/ci/lint
 
 stages:
     # https://docs.gitlab.com/ee/ci/yaml/README.html#stages
@@ -23,7 +22,7 @@ build-dev:
     script:
         - printenv
         - export PROJECT_BUILD_ID=$(/opt/bits-tools/ci-tools/tools/get-build-id.sh)
-        - /opt/bits-tools/build-tools/package-module.py -m ./ --git-branch "${CI_BUILD_REF_NAME}" -b "${PROJECT_BUILD_ID}" -d
+        - /opt/bits-tools/build-tools/package-module.py -m ./ --git-branch "${CI_BUILD_REF_NAME}" -b "${PROJECT_BUILD_ID}" -d -a '/usr/bin/destiny -d ./'
         - echo -n "dev" > .test-branch
         - /opt/bits-tools/ci-tools/tools/get-build-id.sh -u
     artifacts:
@@ -45,7 +44,7 @@ build-release:
         - docker
     script:
         - export PROJECT_BUILD_ID=$(/opt/bits-tools/ci-tools/tools/get-build-id.sh)
-        - /opt/bits-tools/build-tools/package-module.py -m ./ --git-branch "${CI_BUILD_REF_NAME}" -b "${PROJECT_BUILD_ID}"
+        - /opt/bits-tools/build-tools/package-module.py -m ./ --git-branch "${CI_BUILD_REF_NAME}" -b "${PROJECT_BUILD_ID}" -a '/usr/bin/destiny -d ./'
         - echo -n "${CI_BUILD_REF_NAME}" > .test-branch
         - /opt/bits-tools/ci-tools/tools/get-build-id.sh -u
     artifacts:
