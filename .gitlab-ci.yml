@@ -1,68 +1,58 @@
-# This is an example gitlab ci build script to check the syntax you can use the
-
 stages:
-    # https://docs.gitlab.com/ee/ci/yaml/README.html#stages
     - build
     - test
     - omg
-
 
 cache:
     paths:
         - .build-ids/
         - .test-branch
 
-
-build-dev:
-    image: newbelgium:5000/docker-bits:2.0
+.build-module: &build_definition
     stage: build
     tags:
         - bits
         - docker
     script:
-        - printenv
-        - export PROJECT_BUILD_ID=$(/opt/bits-tools/ci-tools/tools/get-build-id.sh)
-        - /opt/bits-tools/build-tools/package-module.py -m ./ --git-branch "${CI_BUILD_REF_NAME}" -b "${PROJECT_BUILD_ID}" -d -a '/usr/bin/destiny -d ./'
-        - echo -n "dev" > .test-branch
-        - /opt/bits-tools/ci-tools/tools/get-build-id.sh -u
-    artifacts:
-        # https://docs.gitlab.com/ee/ci/yaml/README.html#artifacts
-        when: on_success
-        expire_in: 3 weeks
-        paths:
-            - "*.tgz"
+        - /opt/bits-tools/build-tools/package-module.py -a '/usr/bin/destiny -d ./' -m ./ --version "${CI_COMMIT_TAG}"
 
-    except:
-        - master
-        - /^[0-9]{6}-(.*-)?release$/
+build-rc:
+  <<: *build_definition
+  only:
+    - /^[0-9]*\.[0-9]*\.[0-9]*-rc\.[0-9]*$/
+  except:
+    - branches
+  artifacts:
+    paths:
+      - "*.tgz"
+    expire_in: 10d
 
 build-release:
-    image: newbelgium:5000/docker-bits:2.0
-    stage: build
-    tags:
-        - bits
-        - docker
-    script:
-        - export PROJECT_BUILD_ID=$(/opt/bits-tools/ci-tools/tools/get-build-id.sh)
-        - /opt/bits-tools/build-tools/package-module.py -m ./ --git-branch "${CI_BUILD_REF_NAME}" -b "${PROJECT_BUILD_ID}" -a '/usr/bin/destiny -d ./'
-        - echo -n "${CI_BUILD_REF_NAME}" > .test-branch
-        - /opt/bits-tools/ci-tools/tools/get-build-id.sh -u
-    artifacts:
-        # https://docs.gitlab.com/ee/ci/yaml/README.html#artifacts
-        when: on_success
-        paths:
-            - "*.tgz"
+  <<: *build_definition
+  only:
+    - /^[0-9]*\.[0-9]*\.[0-9]*$/
+  except:
+    - branches
+  artifacts:
+    paths:
+      - "*.tgz"
 
-    only:
-        - master
-        - /^[0-9]{6}-(.*-)?release$/
+build-master:
+  <<: *build_definition
+  only:
+    - master
+  except:
+    - tags
+  artifacts:
+    paths:
+      - "*.tgz"
 
-trigger-omg:
-    stage: omg
-    tags:
-        - bits
-        - shell
-    when: on_success
-    script:
-        - /opt/bits-tools/ci-tools/tools/trigger-omgs.py -m ./ -b "${CI_BUILD_REF_NAME}" -o /opt/bits-build/omg-lists
-
+build-branch:
+  <<: *build_definition
+  except:
+    - master
+    - tags
+  artifacts:
+    paths:
+      - "*.tgz"
+    expire_in: 3d

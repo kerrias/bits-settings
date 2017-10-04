@@ -1,6 +1,6 @@
 {
     "appDir": "app",
-    "version": "2.15.0",
+    "version": "",
     "name": "settings",
     "dependencies": {
         "mongodb": "^1.0.0",
